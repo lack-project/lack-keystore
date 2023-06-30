@@ -32,7 +32,7 @@ class KeyStore
         throw new KeyMissingException("Keystore: Invalid key definition for service '$service' (Keyfile: {$this->filename})");
     }
 
-    private static self $instance;
+    private static self|null $instance =null;
 
     /**
      * Singleton get the Keystore
