@@ -54,7 +54,7 @@ class KeyStore
 
     }
 
-    private static string $keyFile = "/opt/.keystore";
+    private static string $keyFile = "/opt/.keystore.yml";
 
     public static function SetKeyfile (string $keyfile) {
         self::$keyFile = $keyfile;
