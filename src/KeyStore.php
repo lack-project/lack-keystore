@@ -42,7 +42,7 @@ class KeyStore
     public static function Get() : self {
         if (self::$instance === null) {
             $fileData = file_get_contents(self::$keyFile);
-            if ($fileData === null)
+            if ($fileData === false)
                 throw new KeystoreException("Cannot load Keystore file " . self::$keyFile);
             $data = yaml_parse($fileData);
             if ($data === false) {
