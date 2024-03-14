@@ -4,16 +4,25 @@ namespace Lack\Keystore;
 
 use Lack\Keystore\Exception\KeyMissingException;
 use Lack\Keystore\Exception\KeystoreException;
+use Lack\Keystore\Loader\KeystoreDockerSecretLoader;
+use Lack\Keystore\Loader\KeystoreFileLoader;
+use Lack\Keystore\Loader\KeyStoreLoaderInterface;
 use Lack\Keystore\Type\Service;
 
 class KeyStore
 {
 
-    private $keystoreData = [];
+    /**
+     * @var KeyStoreLoaderInterface[] 
+     */
+    private $loaders = [];
 
 
-    protected function __construct(array $keystoreData, private string $filename) {
-        $this->keystoreData = $keystoreData;
+    /**
+     * @param KeyStoreLoaderInterface[] $loader
+     */
+    protected function __construct(array $loader) {
+        $this->loaders = $loader;
     }
 
     /**
@@ -23,13 +32,23 @@ class KeyStore
      * @return string
      */
     public function getAccessKey(string|Service $service) : string {
-        if ( ! isset ($this->keystoreData[$service])) {
-            throw new KeyMissingException("Keystore: No key found for service '$service' (Keyfile: {$this->filename})");
+    
+        try {
+            foreach ($this->loaders as $curLoader) {
+                if ($curLoader->has($service)) {
+                    return $curLoader->get($service);
+                }
+            }
+        } catch (KeystoreException $e) {
+            throw new KeyMissingException("Keystore: Error loading key for service '$service' (Keyfile: {$curLoader->getLastKeyFile()}): " . $e->getMessage(), 0, $e);
+        } catch (KeyMissingException $e) {
+            throw new KeyMissingException("Keystore: Error loading key for service '$service' (Keyfile: {$curLoader->getLastKeyFile()}): " . $e->getMessage(), 0, $e);
         }
-        if (is_string($this->keystoreData[$service])) {
-            return $this->keystoreData[$service];
+        $files = [];
+        foreach ($this->loaders as $curLoader) {
+            $files[] =  $curLoader->getLastKeyFile();
         }
-        throw new KeyMissingException("Keystore: Invalid key definition for service '$service' (Keyfile: {$this->filename})");
+        throw new KeyMissingException("Keystore: No key found for service '$service' (Loaders: " . implode(", ", $files) . ")");
     }
 
     private static self|null $instance =null;
@@ -41,20 +60,22 @@ class KeyStore
      */
     public static function Get() : self {
         if (self::$instance === null) {
-            $fileData = file_get_contents(self::$keyFile);
-            if ($fileData === false)
-                throw new KeystoreException("Cannot load Keystore file " . self::$keyFile);
-            $data = yaml_parse($fileData);
-            if ($data === false) {
-                throw new KeystoreException("Keystore: Invalid yaml data in " . self::$keyFile);
+            $loaders = [];
+            foreach (self::$loader as $loader) {
+                $loaders[] = new $loader();
             }
-            self::$instance = new self($data, self::$keyFile);
+            self::$instance = new self($loaders);
         }
         return self::$instance;
 
     }
 
-    private static string $keyFile = "/opt/.keystore.yml";
+    private static ?string $keyFile = null;
+
+    private static array $loader = [
+        KeystoreDockerSecretLoader::class,
+        KeystoreFileLoader::class
+    ];
 
     public static function SetKeyfile (string $keyfile) {
         self::$keyFile = $keyfile;
