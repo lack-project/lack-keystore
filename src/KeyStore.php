@@ -13,7 +13,7 @@ class KeyStore
 {
 
     /**
-     * @var KeyStoreLoaderInterface[] 
+     * @var KeyStoreLoaderInterface[]
      */
     private $loaders = [];
 
@@ -31,12 +31,15 @@ class KeyStore
      * @param string $service
      * @return string
      */
-    public function getAccessKey(string|Service $service) : string {
-    
+    public function getAccessKey(string|Service $service, bool $allowArray = false) : string|array {
+
         try {
             foreach ($this->loaders as $curLoader) {
                 if ($curLoader->has($service)) {
-                    return $curLoader->get($service);
+                    $val = $curLoader->get($service);
+                    if ( ! is_string($val) && ! $allowArray)
+                        throw new \InvalidArgumentException("Keystore: Key for service '$service' is not a string.");
+                    return $val;
                 }
             }
         } catch (KeystoreException $e) {

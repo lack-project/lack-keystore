@@ -8,7 +8,7 @@ class KeystoreFileLoader implements KeyStoreLoaderInterface
     private $rootPath;
 
     private $lastKeyFile;
-    
+
     public function __construct(string $keystoreFile = null) {
         if ($keystoreFile === null) {
             $keystoreFile = $this->detectKeystoreFileInSiblingPath();
@@ -69,12 +69,12 @@ class KeystoreFileLoader implements KeyStoreLoaderInterface
 
     public function getLastKeyFile(): string
     {
-        
+
         return $this->rootPath;
     }
 
 
-    public function get(string $key) : string {
+    public function get(string $key) : string|array {
         if ($this->rootPath === null) {
             throw new KeyMissingException("Keystore: No .keystore.yml found in path: './', " . implode(", ", self::SEARCH_PATH) . " or in parent path.");
         }
