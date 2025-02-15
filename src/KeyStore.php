@@ -73,12 +73,12 @@ class KeyStore
 
     }
 
-    private static ?string $keyFile = null;
-
     private static array $loader = [
+        KeystoreFileLoader::class,
         KeystoreDockerSecretLoader::class,
-        KeystoreFileLoader::class
     ];
+
+    private static ?string $keyFile = null;
 
     public static function SetKeyfile (string $keyfile) {
         self::$keyFile = $keyfile;
