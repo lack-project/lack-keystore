@@ -9,7 +9,7 @@ class KeystoreDockerSecretLoader implements KeyStoreLoaderInterface
 
         private $lastKeyFile;
 
-        public function __construct(string $rootPath = "/run/secrets") {
+        public function __construct(string $rootPath = "/var/run/secrets") {
             $this->rootPath = $rootPath;
         }
 
